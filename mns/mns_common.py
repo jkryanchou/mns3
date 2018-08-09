@@ -9,9 +9,9 @@
 
 class RequestInfo:
     def __init__(self, request_id = None):
-        """ Client传递的请求信息
-            @note: 可传递属性
-            :: request_id: 可将client端的request_id传到MNS服务器端，方便直接使用Client端request_id进行问题排查
+        """ this information will be send to MNS Server
+            @note:
+            :: request_id: used to search logs of this request
         """
         self.request_id = request_id
 
@@ -19,22 +19,31 @@ class TopicHelper:
 
     @staticmethod
     def generate_queue_endpoint(region, accountid, queue_name):
-        """ 根据参数构造QueueEndpoint
+        """
             @type region: string
-            @param region: 队列所在的地域，例如杭州是: cn-hangzhou
+            @param region: the region of queue, such as: cn-hangzhou
 
             @type accountid: string
-            @param region: 队列拥有者的账号ID
+            @param accountid: the accountid of queue's owner
 
             @type queue_name: string
-            @param queue_name: 队列名称
+            @param queue_name
         """
         return "acs:mns:%s:%s:queues/%s" % (region, accountid, queue_name)
 
     @staticmethod
     def generate_mail_endpoint(mail_address):
-        """ 根据参数构造MailEndpoint
-            @type mail_address: string
-            @param mail_address: 邮箱地址
         """
-        return "mail:directmail:%s" % mail_address 
+            @type mail_address: string
+            @param mail_address: the address of mail
+        """
+        return "mail:directmail:%s" % mail_address
+
+    @staticmethod
+    def generate_sms_endpoint(phone=None):
+        """
+            @type phone: string
+            @param phone: the number of phone
+        """
+        endpoint = "sms:directsms:anonymous" if phone is None else "sms:directsms:%s" % phone
+        return endpoint

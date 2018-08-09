@@ -7,15 +7,15 @@
 
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from mns_client import MNSClient
-from mns_request import *
-from queue import Queue
-from topic import Topic
-from subscription import Subscription
-from mns_tool import MNSLogger
+from .mns_client import MNSClient
+from .mns_request import *
+from .queue import Queue
+from .topic import Topic
+from .subscription import Subscription
+from .mns_tool import MNSLogger
 
-class Account:
-    def __init__(self, host, access_id, access_key, security_token = "", debug=False):
+class Account(object):
+    def __init__(self, host, access_id, access_key, security_token = "", debug=False, logger = None):
         """
             @type host: string
             @param host: 访问的url，例如：http://$accountid.mns.cn-hangzhou.aliyuncs.com
@@ -36,7 +36,7 @@ class Account:
         self.access_key = access_key
         self.security_token = security_token
         self.debug = debug
-        self.logger = MNSLogger.get_logger()
+        self.logger = logger
         self.mns_client = MNSClient(host, access_id, access_key, security_token = security_token, logger=self.logger)
 
     def set_debug(self, debug):
@@ -84,7 +84,7 @@ class Account:
 
     def set_attributes(self, account_meta, req_info=None):
         """ 设置Account的属性
-            
+
             @type account_meta: AccountMeta object
             @param queue_meta: 新设置的属性
 
@@ -104,7 +104,7 @@ class Account:
 
     def get_attributes(self, req_info=None):
         """ 获取Account的属性
-            
+
             @rtype: AccountMeta object
             @return: 返回该Account的Meta属性
 
@@ -230,10 +230,10 @@ class Account:
 
     def debuginfo(self, resp):
         if self.debug:
-            print "===================DEBUG INFO==================="
-            print "RequestId: %s" % resp.header["x-mns-request-id"]
-            print "================================================"
-
+            print("===================DEBUG INFO===================")
+            print("RequestId: %s" % resp.header["x-mns-request-id"])
+            print("================================================"
+)
     def __resp2meta__(self, account_meta, resp):
         account_meta.logging_bucket = resp.logging_bucket
 

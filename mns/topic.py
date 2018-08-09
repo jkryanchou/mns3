@@ -8,10 +8,14 @@
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import time
-from mns_client import MNSClient
-from mns_request import *
-from mns_exception import *
-from subscription import *
+from .mns_client import MNSClient
+from .mns_request import *
+from .mns_exception import *
+from .subscription import *
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 class Topic:
     def __init__(self, topic_name, mns_client, debug=False):
@@ -132,7 +136,7 @@ class Topic:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = PublishMessageRequest(self.topic_name, message.message_body, message.message_tag, message.direct_mail)
+        req = PublishMessageRequest(self.topic_name, message.message_body, message.message_tag, message.direct_mail, message.direct_sms)
         req.set_req_info(req_info)
         resp = PublishMessageResponse()
         self.mns_client.publish_message(req, resp)
@@ -171,10 +175,10 @@ class Topic:
 
     def debuginfo(self, resp):
         if self.debug:
-            print "===================DEBUG INFO==================="
-            print "RequestId: %s" % resp.header["x-mns-request-id"]
-            print "================================================"
-
+            print("===================DEBUG INFO===================")
+            print("RequestId: %s" % resp.header["x-mns-request-id"])
+            print("================================================"
+)
     def __resp2meta__(self, topic_meta, resp):
         topic_meta.message_count = resp.message_count
         topic_meta.create_time = resp.create_time
@@ -230,22 +234,23 @@ class TopicMeta:
         return "\n".join(["%s: %s" % (k.ljust(30),v) for k,v in meta_info.items()])
 
 class TopicMessage:
-    def __init__(self, message_body = "", message_tag = "", direct_mail = None):
-        """ 消息属性
+    def __init__(self, message_body = "", message_tag = "", direct_mail = None, direct_sms = None):
+        """ Specify information of TopicMessage
 
-            @note: publish_message 指定属性
-            :: message_body        消息体
-            :: message_tag         消息标签（用于消息过滤）
-            :: direct_mail         消息属性中的DirectMail信息，推送到邮件时需要
-            :: dayu_info           消息属性中的Dayu信息，推送到Dayu短信时需要
+            @note: publish_message params
+            :: message_body        string
+            :: message_tag         string, used to filter message
+            :: direct_mail         DirectMailInfo, the information of direct mail
+            :: direct_sms          DirectSMSInfo, the information of direct sms
 
-            @note: publish_message 返回属性
-            :: message_id               消息ID
-            :: message_body_md5         消息体的MD5值
+            @note: publish_message response information
+            :: message_id
+            :: message_body_md5
         """
         self.message_body = message_body
         self.message_tag = message_tag
         self.direct_mail = direct_mail
+        self.direct_sms = direct_sms
 
         self.message_id = ""
         self.message_body_md5 = ""
@@ -290,3 +295,55 @@ class DirectMailInfo:
                 "AddressType": self.address_type, \
                 "IsHtml": self.is_html,\
                 "ReplyToAddress": self.reply_to_address}
+
+class DirectSMSInfo:
+    SINGLE_CONTENT = "singleContent"
+    MULTI_CONTENT = "multiContent"
+
+    def __init__(self, free_sign_name, template_code, single):
+        """ Specify information of DirectSMS
+
+            @type free_sign name: string
+            @param free_sign_name: the name of sign, you can list from console
+
+            @type template_code: string
+            @param template_code: the code of template, you can list from console
+
+            @type single: bool
+            @param single: the type of SMS is singleContent or not
+        """
+        self.free_sign_name = free_sign_name
+        self.template_code = template_code
+        if single:
+            self.type = DirectSMSInfo.SINGLE_CONTENT
+        else:
+            self.type = DirectSMSInfo.MULTI_CONTENT
+        self.receivers = set([])
+        self.sms_params = {}
+
+    def add_receiver(self, receiver, params=None):
+        """
+            @type receiver: string
+            @param receiver: the phone number of receiver
+
+            @type params: dict
+            @param params: specify params for receiver, such ad: {"key1":"value1", "key2":"value2"}
+        """
+        if self.type == DirectSMSInfo.SINGLE_CONTENT:
+            self.receivers.add(receiver)
+        else:
+            if params is not None:
+                self.sms_params[receiver] = params
+            else:
+                self.sms_params[receiver] = {}
+
+    def set_params(self, params):
+        self.sms_params = params
+
+    def get(self):
+        info = {"FreeSignName": self.free_sign_name,\
+                "TemplateCode": self.template_code,\
+                "Type": self.type,\
+                "Receiver": ','.join(self.receivers),\
+                "SmsParams": json.dumps(self.sms_params)}
+        return info

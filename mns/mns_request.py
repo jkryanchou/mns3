@@ -7,7 +7,7 @@
 
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-class RequestBase:
+class RequestBase(object):
     def __init__(self):
         self.method = ""
         self.request_id = None
@@ -17,7 +17,7 @@ class RequestBase:
             if req_info.request_id is not None:
                 self.request_id = req_info.request_id
 
-class ResponseBase():
+class ResponseBase(object):
     def __init__(self):
         self.status = -1
         self.header = {}
@@ -161,7 +161,7 @@ class BatchSendMessageRequest(RequestBase):
         msg = SendMessageRequestEntry(message_body, delay_seconds, priority)
         self.message_list.append(msg)
 
-class SendMessageResponseEntry:
+class SendMessageResponseEntry(object):
     def __init__(self):
         self.message_id = ""
         self.message_body_md5 = ""
@@ -197,7 +197,7 @@ class BatchPeekMessageRequest(RequestBase):
         self.base64decode = base64decode
         self.method = "GET"
 
-class PeekMessageResponseEntry:
+class PeekMessageResponseEntry(object):
     def __init__(self):
         self.dequeue_count = -1
         self.enqueue_time = -1
@@ -235,7 +235,7 @@ class BatchReceiveMessageRequest(RequestBase):
         self.wait_seconds = wait_seconds
         self.method = "GET"
 
-class ReceiveMessageResponseEntry():
+class ReceiveMessageResponseEntry(object):
     def __init__(self):
         self.dequeue_count = -1
         self.enqueue_time = -1
@@ -357,12 +357,13 @@ class GetTopicAttributesResponse(ResponseBase):
         self.logging_enabled = None
 
 class PublishMessageRequest(RequestBase):
-    def __init__(self, topic_name, message_body, message_tag="", direct_mail=None):
+    def __init__(self, topic_name, message_body, message_tag="", direct_mail=None, direct_sms=None):
         RequestBase.__init__(self)
         self.topic_name = topic_name
         self.message_body = message_body
         self.message_tag = message_tag
         self.direct_mail = direct_mail
+        self.direct_sms = direct_sms
         self.method = "POST"
 
 class PublishMessageResponse(ResponseBase):

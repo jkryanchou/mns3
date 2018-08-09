@@ -7,19 +7,24 @@
 
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import os
 import sys
 import string
 import types
 import logging
 import logging.handlers
-from mns_exception import *
+from .mns_exception import *
 
 METHODS = ["PUT", "POST", "GET", "DELETE"]
 PERMISSION_ACTIONS = ["setqueueattributes", "getqueueattributes", "sendmessage", "receivemessage", "deletemessage", "peekmessage", "changevisibility"]
 
 class MNSLogger:
     @staticmethod
-    def get_logger(log_name="mns_python_sdk", log_file="mns_python_sdk.log", log_level=logging.INFO):
+    def get_logger(log_name=None, log_file=None, log_level=logging.INFO):
+        if log_name is None:
+            log_name = "mns_python_sdk"
+        if log_file is None:
+            log_file = os.path.join(os.path.split(os.path.realpath(__file__))[0], "mns_python_sdk.log")
         logger = logging.getLogger(log_name)
         if logger.handlers == []:
             fileHandler = logging.handlers.RotatingFileHandler(log_file, maxBytes=10*1024*1024)
@@ -51,19 +56,27 @@ class ValidatorBase:
                 raise MNSClientParameterException("TypeInvalid", "Param '%s' in bad type: '%s', '%s' expect type '%s'." % (param_name, type(item), item, valid_type), req_id)
 
     @staticmethod
+    def is_str(item, param_name=None, req_id=None):
+        if not isinstance(item, str):
+            if param_name is None:
+                raise MNSClientParameterException("TypeInvalid", "Bad type: '%s', '%s' expect basestring." % (type(item), item), req_id)
+            else:
+                raise MNSClientParameterException("TypeInvalid", "Param '%s' in bad type: '%s', '%s' expect basestring." % (param_name, type(item), item), req_id)
+
+    @staticmethod
     def marker_validate(req):
-        ValidatorBase.type_validate(req.marker, types.StringType, req_id=req.request_id)
+        ValidatorBase.is_str(req.marker, req_id=req.request_id)
 
     @staticmethod
     def retnumber_validate(req):
-        ValidatorBase.type_validate(req.ret_number, types.IntType, req_id=req.request_id)
+        ValidatorBase.type_validate(req.ret_number, int, req_id=req.request_id)
         if (req.ret_number != -1 and req.ret_number <= 0 ):
             raise MNSClientParameterException("HeaderInvalid", "Bad value: '%s', x-mns-number should larger than 0." % req.ret_number, req.request_id)
 
     @staticmethod
     def name_validate(name, nameType, req_id=None):
         #type
-        ValidatorBase.type_validate(name, types.StringType, req_id=req_id)
+        ValidatorBase.is_str(name, req_id=req_id)
 
         #length
         if len(name) < 1:
@@ -82,17 +95,17 @@ class SetAccountAttributesValidator(ValidatorBase):
     def validate(req):
         #type
         if req.logging_bucket is not None:
-            ValidatorBase.type_validate(req.logging_bucket, types.StringType, req_id=req.request_id)
+            ValidatorBase.is_str(req.logging_bucket, req_id=req.request_id)
 
 class QueueValidator(ValidatorBase):
     @staticmethod
     def queue_validate(req):
         #type
-        ValidatorBase.type_validate(req.visibility_timeout, types.IntType, req_id=req.request_id)
-        ValidatorBase.type_validate(req.maximum_message_size, types.IntType, req_id=req.request_id)
-        ValidatorBase.type_validate(req.message_retention_period, types.IntType, req_id=req.request_id)
-        ValidatorBase.type_validate(req.delay_seconds, types.IntType, req_id=req.request_id)
-        ValidatorBase.type_validate(req.polling_wait_seconds, types.IntType, req_id=req.request_id)
+        ValidatorBase.type_validate(req.visibility_timeout, int, req_id=req.request_id)
+        ValidatorBase.type_validate(req.maximum_message_size, int, req_id=req.request_id)
+        ValidatorBase.type_validate(req.message_retention_period, int, req_id=req.request_id)
+        ValidatorBase.type_validate(req.delay_seconds, int, req_id=req.request_id)
+        ValidatorBase.type_validate(req.polling_wait_seconds, int, req_id=req.request_id)
 
         #value
         if req.visibility_timeout != -1 and req.visibility_timeout <= 0:
@@ -112,9 +125,9 @@ class MessageValidator(ValidatorBase):
     @staticmethod
     def sendmessage_attr_validate(req, req_id):
         #type
-        ValidatorBase.type_validate(req.message_body, types.StringType, None, req_id)
-        ValidatorBase.type_validate(req.delay_seconds, types.IntType, None, req_id)
-        ValidatorBase.type_validate(req.priority, types.IntType, None, req_id)
+        ValidatorBase.is_str(req.message_body, None, req_id)
+        ValidatorBase.type_validate(req.delay_seconds, int, None, req_id)
+        ValidatorBase.type_validate(req.priority, int, None, req_id)
 
         #value
         if req.message_body == "":
@@ -144,11 +157,11 @@ class MessageValidator(ValidatorBase):
     @staticmethod
     def publishmessage_attr_validate(req):
         #type
-        ValidatorBase.type_validate(req.message_body, types.StringType, "message_body", req_id=req.request_id)
-        ValidatorBase.type_validate(req.message_tag, types.StringType, "message_tag", req_id=req.request_id)
+        ValidatorBase.is_str(req.message_body, "message_body", req_id=req.request_id)
+        ValidatorBase.is_str(req.message_tag, "message_tag", req_id=req.request_id)
         if req.direct_mail is not None:
-            ValidatorBase.type_validate(req.direct_mail.account_name, types.StringType, "account_name of direct mail", req_id=req.request_id)
-            ValidatorBase.type_validate(req.direct_mail.subject, types.StringType, "subject of direct mail", req_id=req.request_id)
+            ValidatorBase.is_str(req.direct_mail.account_name, "account_name of direct mail", req_id=req.request_id)
+            ValidatorBase.is_str(req.direct_mail.subject, "subject of direct mail", req_id=req.request_id)
 
         #value
         if req.message_body == "":
@@ -259,7 +272,7 @@ class TopicValidator(ValidatorBase):
     @staticmethod
     def topic_validate(req):
         #type
-        ValidatorBase.type_validate(req.maximum_message_size, types.IntType, "maximum_message_size", req_id=req.request_id)
+        ValidatorBase.type_validate(req.maximum_message_size, int, "maximum_message_size", req_id=req.request_id)
 
         #value
         if req.maximum_message_size != -1 and req.maximum_message_size <= 0:
@@ -309,10 +322,10 @@ class PublishMessageValidator(MessageValidator):
 class SubscriptionValidator(TopicValidator):
     @staticmethod
     def subscription_validate(req):
-        TopicValidator.type_validate(req.endpoint, types.StringType, "endpoint", req_id=req.request_id)
-        TopicValidator.type_validate(req.notify_strategy, types.StringType, "notify_strategy", req_id=req.request_id)
-        TopicValidator.type_validate(req.filter_tag, types.StringType, "filter_tag", req_id=req.request_id)
-        TopicValidator.type_validate(req.notify_content_format, types.StringType, "notify_content_format", req_id=req.request_id)
+        TopicValidator.is_str(req.endpoint, "endpoint", req_id=req.request_id)
+        TopicValidator.is_str(req.notify_strategy, "notify_strategy", req_id=req.request_id)
+        TopicValidator.is_str(req.filter_tag, "filter_tag", req_id=req.request_id)
+        TopicValidator.is_str(req.notify_content_format, "notify_content_format", req_id=req.request_id)
 
     @staticmethod
     def filter_tag_validate(filter_tag, req_id):

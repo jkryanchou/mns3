@@ -8,11 +8,15 @@
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import time
-from mns_client import MNSClient
-from mns_request import *
-from mns_exception import *
+from .mns_client import MNSClient
+from .mns_request import *
+from .mns_exception import *
 
-class Queue:
+class Queue(object):
+    """
+    Args:
+        mns_client (MNSClient)
+    """
     def __init__(self, queue_name, mns_client, debug=False): 
         self.queue_name = queue_name
         self.mns_client = mns_client
@@ -328,9 +332,9 @@ class Queue:
 
     def debuginfo(self, resp):
         if self.debug:
-            print "===================DEBUG INFO==================="
-            print "RequestId: %s" % resp.header["x-mns-request-id"]
-            print "================================================"
+            print("===================DEBUG INFO===================")
+            print("RequestId: %s" % resp.header["x-mns-request-id"])
+            print("================================================")
     
     def __resp2meta__(self, queue_meta, resp):
         queue_meta.visibility_timeout = resp.visibility_timeout
@@ -351,7 +355,6 @@ class Queue:
         msg = Message()
         msg.message_id = resp.message_id
         msg.message_body_md5 = resp.message_body_md5
-        msg.receipt_handle = resp.receipt_handle
         return msg
         
     def __batchsend_resp2msg__(self, resp):
@@ -414,13 +417,13 @@ class Queue:
         msg.next_visible_time = resp.next_visible_time
         return msg
 
-class QueueMeta:
+class QueueMeta(object):
     DEFAULT_VISIBILITY_TIMEOUT = 30
     DEFAULT_MAXIMUM_MESSAGE_SIZE = 2048
     DEFAULT_MESSAGE_RETENTION_PERIOD = 86400
     DEFAULT_DELAY_SECONDS = 0
     DEFAULT_POLLING_WAIT_SECONDS = 0
-    def __init__(self):
+    def __init__(self, vis_timeout = None, max_msg_size = None, msg_ttl = None, delay_sec = None, polling_wait_sec = None, logging_enabled = None):
         """ 队列属性
             @note: 设置属性
             :: visibility_timeout: message被receive后，持续不可消费的时间, 单位：秒
@@ -438,12 +441,12 @@ class QueueMeta:
             :: last_modify_time: 修改queue属性的最近时间，单位：秒
             :: queue_name: 队列名称
         """
-        self.visibility_timeout = QueueMeta.DEFAULT_VISIBILITY_TIMEOUT
-        self.maximum_message_size = QueueMeta.DEFAULT_MAXIMUM_MESSAGE_SIZE
-        self.message_retention_period = QueueMeta.DEFAULT_MESSAGE_RETENTION_PERIOD
-        self.delay_seconds = QueueMeta.DEFAULT_DELAY_SECONDS
-        self.polling_wait_seconds = QueueMeta.DEFAULT_POLLING_WAIT_SECONDS
-        self.logging_enabled = None
+        self.visibility_timeout = QueueMeta.DEFAULT_VISIBILITY_TIMEOUT if vis_timeout is None else vis_timeout
+        self.maximum_message_size = QueueMeta.DEFAULT_MAXIMUM_MESSAGE_SIZE if max_msg_size is None else max_msg_size
+        self.message_retention_period = QueueMeta.DEFAULT_MESSAGE_RETENTION_PERIOD if msg_ttl is None else msg_ttl
+        self.delay_seconds = QueueMeta.DEFAULT_DELAY_SECONDS if delay_sec is None else delay_sec
+        self.polling_wait_seconds = QueueMeta.DEFAULT_POLLING_WAIT_SECONDS if polling_wait_sec is None else polling_wait_sec
+        self.logging_enabled = logging_enabled
 
         self.active_messages = -1
         self.inactive_messages = -1
@@ -486,7 +489,7 @@ class QueueMeta:
         return "\n".join(["%s: %s"%(k.ljust(30),v) for k,v in meta_info.items()])
 
 class Message:
-    def __init__(self, message_body = ""):
+    def __init__(self, message_body = None, delay_seconds = None, priority = None):
         """ 消息属性
 
             @note: send_message 指定属性
@@ -514,9 +517,9 @@ class Message:
             :: receipt_handle
             :: next_visible_time
         """
-        self.message_body = message_body
-        self.delay_seconds = -1
-        self.priority = -1
+        self.message_body = "" if message_body is None else message_body
+        self.delay_seconds = -1 if delay_seconds is None else delay_seconds
+        self.priority = -1 if priority is None else priority
 
         self.message_id = ""
         self.message_body_md5 = ""
